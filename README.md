@@ -22,3 +22,6 @@ See docs/SPEC.md and docs/PROGRESS.md for requirements and validation notes.
 The `.github/workflows/pages.yml` workflow tests, type checks, builds and deploys pushes to `main`, or manual workflow runs. In repository Settings → Pages, select **GitHub Actions** as the source. The build uses Pages' configured base path so assets load under the repository URL. No separate hosting service or local server is required after deployment.
 
 Personal-account Pages sites are public, including sites built from private repositories on eligible paid plans. Private Pages requires a GitHub Enterprise Cloud organization with access control configured.
+
+Live app: https://felixsuhl.com/graphics-pipeline-lab/  
+Repository: https://github.com/feljx/graphics-pipeline-lab

@@ -67,5 +67,15 @@ Final correction checks: 20 tests passed, type checking passed, production build
 - User requested GitHub Pages hosting and phone-compatible GitHub authentication; public Pages is acceptable if private access is unavailable.
 - Verified private Pages requires an Enterprise Cloud organization; personal-account Pages is public.
 - Added an Actions workflow with tests, type checking, production build, dynamic repository base path, and Pages artifact/deployment actions pinned to the official Vite guide's commit references.
-- GitHub CLI 2.102.0 installed and Git repository initialized on main. Device authentication started; waiting for the user to authorize on their phone.
-- Validation: all 20 tests passed; type checking and production build with a repository subpath passed. GitHub repository creation and Pages publication pending authentication.
+- GitHub CLI 2.102.0 installed and Git repository initialized on main. Device authentication completed by the user; GitHub CLI authenticated as feljx.
+- Validation: all 20 tests passed; type checking and production build with a repository subpath passed. GitHub repository and Pages deployment completed (see below).
+
+
+## GitHub Pages deployed — 2026-10-13
+- Public repository: https://github.com/feljx/graphics-pipeline-lab
+- Live application: https://felixsuhl.com/graphics-pipeline-lab/
+- The project inherits the account's existing Pages custom domain. HTTPS is enforced for this project; the account domain configuration was not changed.
+- GitHub Actions run 38321778061 completed successfully: clean npm install, 20 tests, TypeScript/production build, artifact upload and deployment.
+- Live page, JavaScript and CSS assets all returned HTTP 200 over HTTPS.
+- Commits use GitHub's no-reply email. Pushes to main deploy automatically; manual deployments are available in Actions.
+- Documentation-only deployment notes committed with [skip ci] to avoid rebuilding unchanged application assets.
