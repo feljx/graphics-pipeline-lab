@@ -232,3 +232,52 @@ it('restores parent selection, nonstandard order, selected vertex and inspection
  element('lesson-clip').onclick!();await Promise.resolve();await Promise.resolve();element('learn-exit').onclick!();for(let i=0;i<4;i++)await Promise.resolve();flushFrames();
  expect(lab.parent.matrixWorld.equals(matrix)).toBe(true);expect(lab.gizmo.object).toBe(lab.parent);expect(element('order').value).toBe('RTS');expect(lab.gizmo.enabled).toBe(false);expect(element('vertex').value).toBe('6');expect(lab.inspection.far).toBe(far);expect(lab.inspection.position.distanceTo(position)).toBeLessThan(1e-8);expect(element('camera-tab').getAttribute('aria-expanded')).toBe('true');
 });
+it('primary Play advances the introduction, Pause interrupts, and replay starts from checkpoint',async()=>{
+ element('lesson-perspective').onclick!();await Promise.resolve();await Promise.resolve();
+ expect(element('learn-play').getAttribute('aria-label')).toBe('Play');expect(element('learn-play').innerHTML).toContain('<svg');
+ element('learn-play').onclick!();await Promise.resolve();await Promise.resolve();
+ expect(element('learn-title').textContent).toContain('2/5');expect(element('learn-play').getAttribute('aria-label')).toBe('Pause');
+ element('learn-play').onclick!();expect(element('learn-play').getAttribute('aria-label')).toBe('Replay beat');
+ element('learn-play').onclick!();await Promise.resolve();await Promise.resolve();expect(lab.cube.position.z).toBe(0);
+ element('learn-exit').onclick!();await Promise.resolve();await Promise.resolve();flushFrames();
+});
+it('muting a pending model starts caption motion immediately instead of trapping Play',async()=>{
+ vi.stubGlobal('Worker',class{postMessage(){}terminate(){}});
+ element('lesson-clip').onclick!();await Promise.resolve();await Promise.resolve();element('learn-sound').onclick!();element('learn-play').onclick!();await Promise.resolve();await Promise.resolve();
+ expect(lab.camera.near).toBe(.1);expect(element('learn-play').getAttribute('aria-label')).toBe('Pause');
+ element('learn-sound').onclick!();
+ for(const time of [0,900,1800,2700]){const queued=[...frames.values()];frames.clear();queued.forEach(fn=>fn(time));}await Promise.resolve();await Promise.resolve();
+ expect(lab.camera.near).toBeCloseTo(4.5);expect(element('learn-caption').textContent).toContain('Front depth 4.00');
+ element('learn-exit').onclick!();await Promise.resolve();await Promise.resolve();flushFrames();
+});
+it('keeps Pause active during result narration and ignores its completion after interruption',async()=>{
+ let message:{id:number;text:string};let receive:(e:{data:unknown})=>void=()=>{};const post=vi.fn((data:typeof message)=>message=data);
+ vi.stubGlobal('Worker',class{set onmessage(fn:typeof receive){receive=fn;}postMessage=post;terminate(){}});
+ let audio:{onplaying:(()=>void)|null;onended:(()=>void)|null;onpause:(()=>void)|null};
+ vi.stubGlobal('Audio',class{src='';preload='';ended=false;onplaying:(()=>void)|null=null;onended:(()=>void)|null=null;onpause:(()=>void)|null=null;pause(){}play(){return Promise.resolve();}setAttribute(){}removeAttribute(){}load(){}constructor(){audio=this;}});
+ const create=vi.spyOn(URL,'createObjectURL').mockReturnValue('blob:caption'),revoke=vi.spyOn(URL,'revokeObjectURL').mockImplementation(()=>{});
+ try{
+  element('lesson-parent').onclick!();await Promise.resolve();await Promise.resolve();element('learn-sound').onclick!();await Promise.resolve();element('learn-play').onclick!();await Promise.resolve();await Promise.resolve();
+  receive({data:{id:message!.id,blob:new Blob()}});audio!.onplaying!();
+  for(const time of [0,900,1800,2700]){const queued=[...frames.values()];frames.clear();queued.forEach(fn=>fn(time));}
+  audio!.onended!();for(let i=0;i<6;i++)await Promise.resolve();
+  expect(post).toHaveBeenCalledTimes(2);expect(element('learn-caption').textContent).toContain('world (0.00, 0.00, -2.00)');expect(element('learn-play').getAttribute('aria-label')).toBe('Pause');
+  receive({data:{id:message!.id,blob:new Blob()}});audio!.onplaying!();const stale=audio!.onended!;
+  element('learn-play').onclick!();expect(element('learn-play').getAttribute('aria-label')).toBe('Replay beat');stale();for(let i=0;i<4;i++)await Promise.resolve();expect(element('learn-play').getAttribute('aria-label')).toBe('Replay beat');
+  element('learn-exit').onclick!();await Promise.resolve();await Promise.resolve();flushFrames();
+ }finally{create.mockRestore();revoke.mockRestore();}
+});
+it('speech failure switches to captions for the lesson without retrying each result cue',async()=>{
+ let fail:()=>void=()=>{};const post=vi.fn();vi.stubGlobal('Worker',class{set onerror(fn:()=>void){fail=fn;}postMessage=post;terminate(){}});
+ element('lesson-clip').onclick!();await Promise.resolve();await Promise.resolve();element('learn-sound').onclick!();element('learn-play').onclick!();await Promise.resolve();await Promise.resolve();fail();
+ for(const time of [0,900,1800,2700]){const queued=[...frames.values()];frames.clear();queued.forEach(fn=>fn(time));}for(let i=0;i<4;i++)await Promise.resolve();
+ expect(lab.camera.near).toBeCloseTo(4.5);expect(post).toHaveBeenCalledOnce();expect(element('learn-sound').getAttribute('aria-pressed')).toBe('false');expect(element('learn-play').getAttribute('aria-label')).toBe('Play');
+ element('learn-exit').onclick!();await Promise.resolve();await Promise.resolve();flushFrames();
+});
+it('device Play replays the current cue while device Next explicitly advances the lesson',async()=>{
+ const handlers=new Map<string,(()=>void)|null>();vi.stubGlobal('navigator',{mediaSession:{playbackState:'none',metadata:null,setActionHandler:(name:string,handler:(()=>void)|null)=>handlers.set(name,handler)}});
+ element('lesson-perspective').onclick!();await Promise.resolve();await Promise.resolve();handlers.get('play')!();await Promise.resolve();await Promise.resolve();
+ expect(element('learn-title').textContent).toContain('1/5');expect(lab.cube.position.z).toBe(0);
+ handlers.get('nexttrack')!();await Promise.resolve();await Promise.resolve();expect(element('learn-title').textContent).toContain('2/5');
+ element('learn-exit').onclick!();await Promise.resolve();await Promise.resolve();flushFrames();expect([...handlers.values()]).toEqual([null,null,null,null]);
+});

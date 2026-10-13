@@ -26,3 +26,15 @@ header .scene-picker{pointer-events:auto;display:flex;align-items:center;gap:8px
 @media(max-width:600px) and (min-height:501px){#learn-card{left:12px;right:12px;width:auto;bottom:91px;max-height:260px}.inspector:has(.guide-target){bottom:362px;max-height:210px}#panel-dock button{width:48px}}
 @media(max-height:500px){#learn-card{width:300px;right:12px;bottom:12px;max-height:220px}}
 .origin-readout{font:11px/1.7 'IBM Plex Mono',monospace;color:#b2e3d2;padding:10px;margin-bottom:12px}
+/* Keep transport reachable while captions scroll on short phone screens. */
+#learn-card button svg{width:20px;height:20px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#learn-card button:disabled{opacity:.4;cursor:default}#learn-card button:disabled:hover{background:#ffffff05}
+.learn-footer{position:sticky;bottom:-14px;background:#11191c;padding:6px 0 2px;margin-top:8px}
+.learn-transport{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin:0}
+.learn-transport button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:56px;padding:5px 2px;font-size:10px}
+#learn-play{background:#b2e3d216;color:#c8f5e6}#learn-sound[aria-pressed=true]{color:#b2e3d2;background:#b2e3d20d}
+.learn-actions{display:flex;gap:8px;margin-top:4px}.learn-actions button{display:flex;align-items:center;gap:6px;padding:6px 8px;font-size:11px;min-height:44px}
+#voice-status{line-height:1.4;min-height:14px}#learn-caption{max-height:10em;overflow:auto;overscroll-behavior:contain}
+@media(max-width:600px) and (min-height:501px){#learn-card{max-height:300px}.inspector:has(.guide-target){bottom:402px;max-height:180px}}
+@media(max-height:500px){#learn-card{max-height:calc(var(--visible-height,100dvh) - 160px)}#learn-caption{max-height:7.5em}.learn-footer{bottom:-14px}}
+@media(hover:none){button:hover{background:#ffffff05}#learn-play:hover{background:#b2e3d216}}
