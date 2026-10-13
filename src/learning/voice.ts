@@ -110,7 +110,7 @@ export class Voice {
        if(id!==this.id)return;
        void audio.play().catch((error:unknown)=>{
         if(id!==this.id)return;
-        if(error instanceof Error&&error.name==='NotAllowedError'){
+        if(error!==null&&typeof error==='object'&&'name' in error&&error.name==='NotAllowedError'){
          this.needsGesture=true;this.ready=play;this.mediaState('paused');
          this.status('Voice is ready. Tap Play audio to allow sound on this phone, or switch Sound off.');this.changed();
         }else fail('Audio playback unavailable. Continuing with captions.');

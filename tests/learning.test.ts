@@ -41,7 +41,7 @@ it('unlocks during the tap and reuses the same media element for consecutive cue
 it('blocked mobile autoplay retains generated speech and retries directly from a tap',async()=>{
  const mock=mediaMocks();try{
   const status=vi.fn(),voice=new Voice(status),start=vi.fn();voice.mute();await Promise.resolve();
-  const audio=mock.elements[0];audio.play.mockRejectedValueOnce(Object.assign(new Error('Tap required'),{name:'NotAllowedError'}));
+  const audio=mock.elements[0];audio.play.mockRejectedValueOnce({name:'NotAllowedError',message:'Tap required'});
   const pending=voice.speak('measured cue',start);mock.generated();await Promise.resolve();
   expect(voice.needsGesture).toBe(true);expect(start).not.toHaveBeenCalled();expect(status).toHaveBeenLastCalledWith(expect.stringContaining('Tap Play audio'));
   const count=audio.play.mock.calls.length;voice.playReady();expect(audio.play).toHaveBeenCalledTimes(count+1);expect(mock.post).toHaveBeenCalledOnce();
