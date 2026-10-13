@@ -1,15 +1,18 @@
-const views=['object','camera','pipeline','math','view'] as const;
+const views=['object','camera','math','view'] as const;
 type View=typeof views[number];
-/** One set of panels and controls; CSS determines their placement at each size. */
+/** One non-modal panel: outside touches dismiss it without blocking the scene. */
 export function bindWorkbench(layoutChanged:()=>void){
- const root=document.getElementById('app')!,body=document.getElementById('workbench-body')!;
- const toggle=document.getElementById('panel-toggle')!;
- const buttons=views.map(view=>document.getElementById(view==='view'?'settings':`${view}-tab`)!);
- const panels=views.map(view=>document.getElementById(`${view}-controls`)!);
- function expand(open:boolean){body.hidden=!open;root.classList.toggle('controls-hidden',!open);toggle.setAttribute('aria-expanded',String(open));toggle.setAttribute('aria-label',open?'Hide controls':'Show controls');toggle.textContent=open?'⌄':'⌃';layoutChanged();}
- function select(view:View){views.forEach((v,i)=>{const active=v===view;panels[i].hidden=!active;buttons[i].classList.toggle('active',active);buttons[i].setAttribute('aria-selected',String(active));buttons[i].tabIndex=active?0:-1;});document.getElementById('vertex-panel')!.hidden=view==='pipeline'||view==='view';body.scrollTop=0;expand(true);}
- function keydown(event:KeyboardEvent){const index=buttons.indexOf(event.target as HTMLElement);if(index<0)return;const next=event.key==='ArrowRight'?(index+1)%views.length:event.key==='ArrowLeft'?(index+views.length-1)%views.length:event.key==='Home'?0:event.key==='End'?views.length-1:-1;if(next<0)return;event.preventDefault();select(views[next]);buttons[next].focus();}
- buttons.forEach((button,i)=>button.onclick=()=>select(views[i]));toggle.onclick=()=>expand(body.hidden);
- root.addEventListener('keydown',keydown);select('object');
- return {select,dispose(){root.removeEventListener('keydown',keydown);}};
+ const panel=document.getElementById('floating-panel')!,dock=document.getElementById('panel-dock')!,body=document.getElementById('workbench-body')!;
+ const buttons=views.map(view=>document.getElementById(`${view}-tab`)!);
+ const viewport=window.visualViewport;
+ function resize(){if(viewport){document.documentElement.style.setProperty('--visible-height',`${viewport.height}px`);document.documentElement.style.setProperty('--visible-top',`${viewport.offsetTop}px`);layoutChanged();}}
+ viewport?.addEventListener('resize',resize);viewport?.addEventListener('scroll',resize);resize();
+ let selected:View|undefined;
+ function close(restoreFocus=false){panel.hidden=true;buttons.forEach(b=>b.setAttribute('aria-expanded','false'));if(restoreFocus&&selected)buttons[views.indexOf(selected)].focus();selected=undefined;}
+ function select(view:View){selected=view;panel.hidden=false;views.forEach((v,i)=>{document.getElementById(`${v}-controls`)!.hidden=v!==view;buttons[i].setAttribute('aria-expanded',String(v===view));});document.getElementById('vertex-panel')!.hidden=view!=='math';document.getElementById('panel-title')!.textContent={object:'Object',camera:'Scene camera',math:'Inspect',view:'View'}[view];body.scrollTop=0;document.getElementById('panel-close')!.focus();layoutChanged();}
+ function outside(e:Event){if(!panel.hidden&&!panel.contains(e.target as Node)&&!dock.contains(e.target as Node))close();}
+ function escape(e:KeyboardEvent){if(e.key==='Escape'&&!panel.hidden){e.preventDefault();close(true);}}
+ buttons.forEach((button,i)=>button.onclick=()=>selected===views[i]?close():select(views[i]));document.getElementById('panel-close')!.onclick=()=>close(true);
+ document.addEventListener('pointerdown',outside);document.addEventListener('keydown',escape);close();
+ return {select,dispose(){viewport?.removeEventListener('resize',resize);viewport?.removeEventListener('scroll',resize);document.removeEventListener('pointerdown',outside);document.removeEventListener('keydown',escape);}};
 }

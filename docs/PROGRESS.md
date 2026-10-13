@@ -1,4 +1,5 @@
 # Progress
+Current direction: floating scene tools supersede the previous milestone roadmap. Lesson stages, walkthrough and preset bookmarks are removed; contextual interactive notes are deferred. Historical entries below describe earlier versions.
 - Repository inspected: empty.
 - Specification and project conventions saved.
 - Milestone A: implemented and validated; audit corrections validated below.
@@ -94,3 +95,11 @@ Final correction checks: 20 tests passed, type checking passed, production build
 - Resize the WebGL drawing buffer and update inspection projection only when host dimensions change.
 - Increase orbit damping factor from the Three.js default 0.05 to 0.15 for faster response; explicitly continue frames while damping changes the camera, then stop when settled.
 - Validation: 25 tests passed, TypeScript and production build passed. Regressions cover burst coalescing, final inspector values, resize-only-on-change, and real OrbitControls mouse/touch pointer paths through movement, release, damping and idle. Browser verified real gizmo drags at desktop and 390×844 phone size update position and trace together. Native-device performance remains unmeasured.
+
+
+## Floating scene tools — 2026-10-13
+- Replaced the fixed workbench with a full-screen scene and one reusable, non-modal floating panel. Object, Camera, Inspect and View icons open it; outside touch/click, the same icon, close button or Escape dismiss it. Outside gestures continue to the scene. The camera output is a permanently pinned panel.
+- Default dark panels have subtle borders and slight transparency. Phone layout uses safe areas and the visual viewport for keyboard space. Portrait framing leaves the cube above the panel; Fit centers and scales the current cube using its actual world bounds. Resizing preserves orbit direction/target and relative zoom.
+- Gizmos scale with available screen size and use softer axis colors. Removed redundant world axes; shorter local axes and the camera frustum are opt-in. Canceled touch drags release the gizmo/orbit lock. Previous drag batching and resize optimizations remain.
+- Removed lesson stages, timed walkthrough, preset loading and their shortcuts. Previous future milestone plans are superseded. Interactive contextual notes tied to the current scene are a future direction only; no replacement lesson system was added.
+- Validation: 27 deterministic tests pass, with regressions for outside dismissal without event cancellation, retained edits, Escape, portrait fit/rotation resize, canceled drags and visual-viewport keyboard resizing. Type checking and production build pass. Browser checked 402×874 portrait, 874×402 landscape and 1280×800 desktop; no horizontal overflow, pinned output remains visible, camera projection switching works, and an outside gizmo drag both dismisses the panel and changes numeric position. Native iPhone touch/keyboard and device performance remain unverified.

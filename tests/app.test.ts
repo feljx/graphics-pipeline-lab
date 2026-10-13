@@ -1,4 +1,5 @@
 import {beforeEach,afterEach,expect,it,vi} from 'vitest';
+import type {PerspectiveCamera} from 'three';
 import type {createLab} from '../src/scene/lab';
 
 // Keep scene objects, math, OrbitControls and TransformControls real. Only the
@@ -11,6 +12,7 @@ class ElementStub extends EventTarget {
  setAttribute(name:string,value:string){this.attributes.set(name,value);}
  getAttribute(name:string){return this.attributes.get(name)??null;}
  focus(){}
+ contains(node:unknown){return node===this;}
  private html='';
  constructor(public id=''){super();}
  get innerHTML(){return this.html;}
@@ -75,7 +77,7 @@ it('can pick and drag a real gizmo handle and synchronizes numeric inputs',()=>{
  lab.gizmo.pointerMove({...pointer!,x:pointer!.x+.1,y:pointer!.y+.1,button:-1});
  expect(lab.cube.position.distanceTo(initial)).toBeGreaterThan(.001);flushFrames();
  lab.cube.position.toArray().forEach((v,i)=>expect(Number(element(`position-${i}`).value)).toBeCloseTo(v,2));
- lab.gizmo.pointerUp({...pointer!,button:0});expect(lab.orbit.enabled).toBe(true);
+ lab.renderer.domElement.dispatchEvent(new Event('pointercancel'));expect(lab.gizmo.dragging).toBe(false);expect(lab.orbit.enabled).toBe(true);
 });
 it('keeps orders per object and camera edits leave both model matrices unchanged',()=>{
  edit('position-0','2');edit('position-1','0');edit('rotation-1','0');edit('rotation-2','90');
@@ -97,25 +99,35 @@ it('parent rotation checkbox works with parent selected, including RTS compositi
  expect(lab.parent.rotation.y).toBe(0);expect(Number(element('rotation-1').value)).toBe(0);
 });
 
-it('shares controls across workbench tabs and restores a collapsed panel',()=>{
- edit('position-0','2');
+it('opens one floating panel, preserves edits and dismisses on outside touch',()=>{
+ expect(element('floating-panel').hidden).toBe(true);edit('position-0','2');
  element('camera-tab').onclick!();
- expect(element('object-controls').hidden).toBe(true);
- expect(element('camera-controls').hidden).toBe(false);
- expect(element('camera-tab').getAttribute('aria-selected')).toBe('true');
- element('panel-toggle').onclick!();expect(element('workbench-body').hidden).toBe(true);
- element('math-tab').onclick!();expect(element('workbench-body').hidden).toBe(false);
- expect(element('math-controls').hidden).toBe(false);
- element('object-tab').onclick!();expect(element('position-0').value).toBe('2');
- expect(lab.cube.position.x).toBe(2);flushFrames();
+ expect(element('floating-panel').hidden).toBe(false);expect(element('object-controls').hidden).toBe(true);
+ expect(element('camera-tab').getAttribute('aria-expanded')).toBe('true');
+ const inside=Object.defineProperty(new Event('pointerdown'),'target',{value:element('floating-panel')});doc.dispatchEvent(inside);
+ expect(element('floating-panel').hidden).toBe(false);
+ const outside=Object.defineProperty(new Event('pointerdown',{cancelable:true}),'target',{value:element('canvas')});doc.dispatchEvent(outside);
+ expect(element('floating-panel').hidden).toBe(true);expect(outside.defaultPrevented).toBe(false);
+ element('object-tab').onclick!();expect(element('position-0').value).toBe('2');expect(lab.cube.position.x).toBe(2);
+ element('object-tab').onclick!();expect(element('floating-panel').hidden).toBe(true);flushFrames();
 });
-it('supports roving keyboard tabs without changing the pipeline stage',()=>{
- const event=Object.defineProperty(Object.assign(new Event('keydown'),{key:'End'}),'target',{value:element('object-tab')});
- element('app').dispatchEvent(event);
- expect(element('settings').tabIndex).toBe(0);
- expect(element('view-controls').hidden).toBe(false);
- expect(element('vertex-panel').hidden).toBe(true);
- element('pipeline-tab').onclick!();expect(element('pipeline-controls').hidden).toBe(false);flushFrames();
+it('supports Escape and keeps inspection separate from object and view panels',()=>{
+ element('math-tab').onclick!();expect(element('vertex-panel').hidden).toBe(false);
+ doc.dispatchEvent(Object.assign(new Event('keydown'),{key:'Escape'}));
+ expect(element('floating-panel').hidden).toBe(true);
+ element('view-tab').onclick!();expect(element('view-controls').hidden).toBe(false);expect(element('vertex-panel').hidden).toBe(true);
+ element('panel-close').onclick!();expect(element('view-tab').getAttribute('aria-expanded')).toBe('false');flushFrames();
+});
+it('fits a portrait viewport and resizes without changing the scene camera',()=>{
+ const camera=lab.camera.projectionMatrix.clone();
+ element('viewport').clientWidth=402;element('viewport').clientHeight=874;lab.request();flushFrames();lab.frame();flushFrames();
+ const inspection=lab.orbit.object as PerspectiveCamera;inspection.updateMatrixWorld(true);
+ for(const corner of lab.corners){const p=corner.clone().applyMatrix4(lab.cube.matrixWorld).applyMatrix4(inspection.matrixWorldInverse).applyMatrix4(inspection.projectionMatrix);expect(Math.abs(p.x/p.w)).toBeLessThan(.8);expect(Math.abs(p.y/p.w)).toBeLessThan(.8);}
+ expect(lab.camera.projectionMatrix.equals(camera)).toBe(true);
+ expect(lab.gizmo.size).toBeLessThan(1);
+ const direction=inspection.position.clone().sub(lab.orbit.target).normalize(),target=lab.orbit.target.clone();
+ element('viewport').clientWidth=874;element('viewport').clientHeight=402;lab.request();flushFrames();
+ expect(lab.orbit.target.equals(target)).toBe(true);expect(inspection.position.clone().sub(target).normalize().distanceTo(direction)).toBeLessThan(1e-10);
 });
 
 it('coalesces drag inspection into one frame and avoids unchanged buffer resizes',()=>{
@@ -142,4 +154,16 @@ it.each(['mouse','touch'])('%s dragging moves immediately, keeps damping renderi
  expect(frames.size).toBeGreaterThan(0);flushFrames();
  expect(lab.orbit.object.position.distanceTo(released)).toBeGreaterThan(.01);
  expect(frames.size).toBe(0);expect(lab.orbit.enabled).toBe(true);
+});
+
+it('keeps panels within the visual viewport when the phone keyboard opens',async()=>{
+ const viewport=Object.assign(new EventTarget(),{height:420,offsetTop:35});
+ Object.defineProperty(window,'visualViewport',{value:viewport,configurable:true});
+ const style={setProperty:vi.fn()};Object.assign(doc,{documentElement:{style}});
+ const {bindWorkbench}=await import('../src/ui/workbench');const panel=bindWorkbench(()=>{});
+ expect(style.setProperty).toHaveBeenCalledWith('--visible-height','420px');
+ expect(style.setProperty).toHaveBeenCalledWith('--visible-top','35px');
+ viewport.height=300;viewport.dispatchEvent(new Event('resize'));
+ expect(style.setProperty).toHaveBeenCalledWith('--visible-height','300px');
+ panel.dispose();style.setProperty.mockClear();viewport.dispatchEvent(new Event('resize'));expect(style.setProperty).not.toHaveBeenCalled();
 });
