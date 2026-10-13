@@ -7,6 +7,10 @@ class ElementStub extends EventTarget {
  value=''; checked=false; hidden=false; textContent=''; className=''; min=''; max='';
  style={}; classList={toggle:vi.fn()}; clientWidth=1000;clientHeight=800;
  onclick?:()=>void;onchange?:()=>void;
+ tabIndex=0;scrollTop=0;private attributes=new Map<string,string>();
+ setAttribute(name:string,value:string){this.attributes.set(name,value);}
+ getAttribute(name:string){return this.attributes.get(name)??null;}
+ focus(){}
  private html='';
  constructor(public id=''){super();}
  get innerHTML(){return this.html;}
@@ -89,4 +93,25 @@ it('parent rotation checkbox works with parent selected, including RTS compositi
  expect(lab.parent.matrixWorld.elements[14]).toBeCloseTo(-1);
  element('parent-enabled').checked=false;element('parent-enabled').onchange!();
  expect(lab.parent.rotation.y).toBe(0);expect(Number(element('rotation-1').value)).toBe(0);
+});
+
+it('shares controls across workbench tabs and restores a collapsed panel',()=>{
+ edit('position-0','2');
+ element('camera-tab').onclick!();
+ expect(element('object-controls').hidden).toBe(true);
+ expect(element('camera-controls').hidden).toBe(false);
+ expect(element('camera-tab').getAttribute('aria-selected')).toBe('true');
+ element('panel-toggle').onclick!();expect(element('workbench-body').hidden).toBe(true);
+ element('math-tab').onclick!();expect(element('workbench-body').hidden).toBe(false);
+ expect(element('math-controls').hidden).toBe(false);
+ element('object-tab').onclick!();expect(element('position-0').value).toBe('2');
+ expect(lab.cube.position.x).toBe(2);flushFrames();
+});
+it('supports roving keyboard tabs without changing the pipeline stage',()=>{
+ const event=Object.defineProperty(Object.assign(new Event('keydown'),{key:'End'}),'target',{value:element('object-tab')});
+ element('app').dispatchEvent(event);
+ expect(element('settings').tabIndex).toBe(0);
+ expect(element('view-controls').hidden).toBe(false);
+ expect(element('vertex-panel').hidden).toBe(true);
+ element('pipeline-tab').onclick!();expect(element('pipeline-controls').hidden).toBe(false);flushFrames();
 });

@@ -79,3 +79,11 @@ Final correction checks: 20 tests passed, type checking passed, production build
 - Live page, JavaScript and CSS assets all returned HTTP 200 over HTTPS.
 - Commits use GitHub's no-reply email. Pushes to main deploy automatically; manual deployments are available in Actions.
 - Documentation-only deployment notes committed with [skip ci] to avoid rebuilding unchanged application assets.
+
+
+## Unified responsive workbench — 2026-10-13
+- Replaced the compressed desktop/mobile overrides with one shared workbench and five accessible tabs: Object, Camera, Pipeline, Math, View. No duplicated mobile controls or state.
+- Phones place the live scene above a scrollable workbench; desktop and landscape place them side by side. Collapsing controls expands the actual canvas and keeps navigation available.
+- Added touch-sized controls, larger numeric inputs, dynamic viewport/safe-area sizing, keyboard tab navigation, and reduced-motion support. Scene-camera preview stays inside the renderer host and follows its resize.
+- Pipeline lessons, matrices, projected vertices, overlays and comparison are reachable at every size. Mathematical and scene-state implementations are unchanged.
+- Validation: 22 tests passed, type checking and production build passed. New regressions cover shared control state, collapse/reopen, panel visibility and keyboard tabs. Browser checked 390×844 portrait, 740×390 landscape and 1280×800 desktop: no horizontal overflow; scene and controls fit; collapsed canvas fills available space. Native phone touch/keyboard behavior remains unverified. Existing Three.js bundle-size advisory remains.

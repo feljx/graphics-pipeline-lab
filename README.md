@@ -9,7 +9,9 @@ npm run dev
 
 Open http://localhost:5173. `npm test`, `npm run typecheck`, and `npm run build` validate the project.
 
-Drag to orbit, scroll to zoom, click cube corners, and use W/E/R for move/rotate/scale. Arrow keys navigate stages; Space starts or pauses the walkthrough. The scene camera is independent from the inspection view. Camera controls use an explicit position and look-at target. Scene geometry is layer 0; inspection helpers are layer 1.
+Use the Object, Camera, Pipeline, Math and View tabs in the shared workbench. On phones, controls sit below the scene; collapse them with the chevron for more scene space.
+
+Drag to orbit, pinch or scroll to zoom, click cube corners, and use W/E/R for move/rotate/scale. Arrow keys navigate stages; Space starts or pauses the walkthrough. The scene camera is independent from the inspection view. Camera controls use an explicit position and look-at target. Scene geometry is layer 0; inspection helpers are layer 1.
 
 Screen coordinates are logical viewport pixels with top-left origin. The camera preview contains this aspect ratio. Canvas CSS coordinates account for its fitted position; drawing-buffer coordinates multiply by renderer DPR (capped at 2). These coordinates can lie outside the preview when a point is clipped. Clipping labels classify vertices, not entire triangles.
 
