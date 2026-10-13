@@ -18,6 +18,8 @@ class ElementStub extends EventTarget {
  get valueAsNumber(){return this.value===''?NaN:Number(this.value);}
  get ownerDocument(){return document;}
  getRootNode(){return document;}
+ setPointerCapture(){}
+ releasePointerCapture(){}
  append(){}
  getBoundingClientRect(){return {left:0,top:0,width:this.clientWidth,height:this.clientHeight};}
  insertAdjacentHTML(_position:string,value:string){this.parseInputs(value);}
@@ -71,7 +73,7 @@ it('can pick and drag a real gizmo handle and synchronizes numeric inputs',()=>{
  expect(pointer).toBeDefined();const initial=lab.cube.position.clone();
  lab.gizmo.pointerDown(pointer!);expect(lab.gizmo.dragging).toBe(true);expect(lab.orbit.enabled).toBe(false);
  lab.gizmo.pointerMove({...pointer!,x:pointer!.x+.1,y:pointer!.y+.1,button:-1});
- expect(lab.cube.position.distanceTo(initial)).toBeGreaterThan(.001);
+ expect(lab.cube.position.distanceTo(initial)).toBeGreaterThan(.001);flushFrames();
  lab.cube.position.toArray().forEach((v,i)=>expect(Number(element(`position-${i}`).value)).toBeCloseTo(v,2));
  lab.gizmo.pointerUp({...pointer!,button:0});expect(lab.orbit.enabled).toBe(true);
 });
@@ -114,4 +116,30 @@ it('supports roving keyboard tabs without changing the pipeline stage',()=>{
  expect(element('view-controls').hidden).toBe(false);
  expect(element('vertex-panel').hidden).toBe(true);
  element('pipeline-tab').onclick!();expect(element('pipeline-controls').hidden).toBe(false);flushFrames();
+});
+
+it('coalesces drag inspection into one frame and avoids unchanged buffer resizes',()=>{
+ const resize=vi.spyOn(lab.renderer,'setSize');
+ const before=element('matrices').innerHTML;
+ lab.cube.position.x=2;
+ for(let i=0;i<20;i++)lab.gizmo.dispatchEvent({type:'objectChange'});
+ expect(element('matrices').innerHTML).toBe(before);
+ expect(frames.size).toBe(1);flushFrames();
+ expect(Number(element('position-0').value)).toBe(2);
+ expect(element('matrices').innerHTML).not.toBe(before);
+ expect(resize).not.toHaveBeenCalled();
+ element('viewport').clientWidth=600;lab.request();flushFrames();
+ expect(resize).toHaveBeenCalledExactlyOnceWith(600,800,false);
+});
+it.each(['mouse','touch'])('%s dragging moves immediately, keeps damping rendering, then settles',pointerType=>{
+ const canvas=lab.renderer.domElement;
+ function pointer(type:string,x:number){canvas.dispatchEvent(Object.assign(new Event(type),{pointerId:1,pointerType,clientX:x,clientY:100,pageX:x,pageY:100,button:type==='pointermove'?-1:0}));}
+ const initial=lab.orbit.object.position.clone();
+ pointer('pointerdown',100);pointer('pointermove',200);
+ expect(lab.orbit.object.position.distanceTo(initial)).toBeGreaterThan(.1);
+ pointer('pointerup',200);
+ const released=lab.orbit.object.position.clone();
+ expect(frames.size).toBeGreaterThan(0);flushFrames();
+ expect(lab.orbit.object.position.distanceTo(released)).toBeGreaterThan(.01);
+ expect(frames.size).toBe(0);expect(lab.orbit.enabled).toBe(true);
 });

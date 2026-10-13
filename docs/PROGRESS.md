@@ -87,3 +87,10 @@ Final correction checks: 20 tests passed, type checking passed, production build
 - Added touch-sized controls, larger numeric inputs, dynamic viewport/safe-area sizing, keyboard tab navigation, and reduced-motion support. Scene-camera preview stays inside the renderer host and follows its resize.
 - Pipeline lessons, matrices, projected vertices, overlays and comparison are reachable at every size. Mathematical and scene-state implementations are unchanged.
 - Validation: 22 tests passed, type checking and production build passed. New regressions cover shared control state, collapse/reopen, panel visibility and keyboard tabs. Browser checked 390×844 portrait, 740×390 landscape and 1280×800 desktop: no horizontal overflow; scene and controls fit; collapsed canvas fills available space. Native phone touch/keyboard behavior remains unverified. Existing Three.js bundle-size advisory remains.
+
+
+## Drag responsiveness — 2026-10-13
+- Coalesce gizmo object changes into one inspector update immediately before rendering each frame, rather than rebuilding DOM for every pointer event. Final transforms and numerical inspection remain synchronized.
+- Resize the WebGL drawing buffer and update inspection projection only when host dimensions change.
+- Increase orbit damping factor from the Three.js default 0.05 to 0.15 for faster response; explicitly continue frames while damping changes the camera, then stop when settled.
+- Validation: 25 tests passed, TypeScript and production build passed. Regressions cover burst coalescing, final inspector values, resize-only-on-change, and real OrbitControls mouse/touch pointer paths through movement, release, damping and idle. Browser verified real gizmo drags at desktop and 390×844 phone size update position and trace together. Native-device performance remains unmeasured.
