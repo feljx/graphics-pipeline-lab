@@ -27,3 +27,9 @@ Personal-account Pages sites are public, including sites built from private repo
 
 Live app: https://felixsuhl.com/graphics-pipeline-lab/  
 Repository: https://github.com/feljx/graphics-pipeline-lab
+
+
+### Woodland campsite
+Choose **Scene → Woodland campsite** in the main app. Click a prop to inspect its actual mesh vertices, edit its local or parent transform, or use the existing camera, matrix, overlay and comparison tools. **Fit** frames the diorama; **Reset scene** restores its authored layout. The game camera starts orthographic. Return through **Scene → Cube lab**.
+
+Assets: [Kenney Nature Kit](https://kenney.nl/assets/nature-kit), CC0; original license is in `public/assets/nature/License.txt`. Scene layout is deterministic and all assets load locally.

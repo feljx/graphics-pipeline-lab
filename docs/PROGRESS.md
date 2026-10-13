@@ -103,3 +103,13 @@ Final correction checks: 20 tests passed, type checking passed, production build
 - Gizmos scale with available screen size and use softer axis colors. Removed redundant world axes; shorter local axes and the camera frustum are opt-in. Canceled touch drags release the gizmo/orbit lock. Previous drag batching and resize optimizations remain.
 - Removed lesson stages, timed walkthrough, preset loading and their shortcuts. Previous future milestone plans are superseded. Interactive contextual notes tied to the current scene are a future direction only; no replacement lesson system was added.
 - Validation: 27 deterministic tests pass, with regressions for outside dismissal without event cancellation, retained edits, Escape, portrait fit/rotation resize, canceled drags and visual-viewport keyboard resizing. Type checking and production build pass. Browser checked 402×874 portrait, 874×402 landscape and 1280×800 desktop; no horizontal overflow, pinned output remains visible, camera projection switching works, and an outside gizmo drag both dismisses the panel and changes numeric position. Native iPhone touch/keyboard and device performance remain unverified.
+
+
+## Woodland scene integration — 2026-10-13
+- Integrated the Kenney CC0 Nature Kit campsite through the existing renderer and floating workbench; Scene selector switches between Cube lab and Woodland campsite.
+- Shared renderer-independent loader supplies deterministic trees, tent, logs, rocks and mushrooms, with vendored OBJ/MTL files and original license.
+- Clicking geometry selects an actual triangle vertex. Existing transforms, gizmos, live matrices, homogeneous traces, projection plot, scene-camera preview and comparison use the selected mesh. Parent transforms target its real scene parent.
+- Woodland camera starts with an orthographic game view; inspection remains orbitable. Fit frames the whole diorama, reset restores authored woodland transforms.
+- Standalone woodland preview remains available for reference.
+- Validation: TypeScript passed; 29 tests passed, including deterministic loading of the actual vendored OBJ/MTL assets and application integration coverage for selected meshes, parent transforms, preview projection, ghost comparison, reset and scene switching. Browser confirmed imported tree picking, numeric edit synchronization, live matrices/vertex trace and the shared orthographic scene-camera preview.
+- Production build passed (~586 kB JavaScript minified); existing bundle-size advisory remains. Background selection persists across demand renders.

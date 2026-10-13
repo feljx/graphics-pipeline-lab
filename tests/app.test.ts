@@ -167,3 +167,22 @@ it('keeps panels within the visual viewport when the phone keyboard opens',async
  expect(style.setProperty).toHaveBeenCalledWith('--visible-height','300px');
  panel.dispose();style.setProperty.mockClear();viewport.dispatchEvent(new Event('resize'));expect(style.setProperty).not.toHaveBeenCalled();
 });
+
+
+it('integrates woodland selection, actual mesh transforms, preview, reset and return to cube',async()=>{
+ const T=await import('three');const assets=await import('../src/scene/woodland-assets');
+ const world=new T.Group(),parent=new T.Group();parent.position.set(2,0,-1);parent.scale.setScalar(3);world.add(parent);
+ const mesh=new T.Mesh(new T.BoxGeometry(1,2,1),new T.MeshStandardMaterial());mesh.name='Amber tent / fixture';mesh.position.y=1;parent.add(mesh);
+ vi.spyOn(assets,'loadWoodland').mockResolvedValue({world,meshes:[mesh]});
+ element('scene-choice').value='woodland';await element('scene-choice').onchange!();flushFrames();
+ expect(world.parent).toBe(lab.scene);expect(world.visible).toBe(true);expect(lab.parent.visible).toBe(false);expect(lab.floor.visible).toBe(false);
+ expect(lab.gizmo.object).toBe(mesh);expect(element('object-name').textContent).toBe(mesh.name);expect(element('vertex').innerHTML).toContain('mesh');
+ expect(lab.camera).toBeInstanceOf(T.OrthographicCamera);expect(element('projection').value).toBe('orthographic');
+ edit('position-0','1.5');flushFrames();expect(mesh.position.x).toBe(1.5);expect(mesh.matrixWorld.elements[12]).toBe(6.5);
+ const numeric=element('matrices').innerHTML;expect(numeric).toContain('6.500');expect(element('trace').innerHTML).toContain('World');
+ element('compare').onclick!();flushFrames();const ghost=lab.scene.children.find(o=>o instanceof T.Mesh&&o.material instanceof T.MeshBasicMaterial&&o.material.wireframe) as import('three').Mesh;
+ expect(ghost.geometry).toBe(mesh.geometry);expect(ghost.matrix.equals(mesh.matrixWorld)).toBe(true);
+ change('hierarchy','parent');expect(lab.gizmo.object).toBe(parent);edit('rotation-1','30');flushFrames();expect(parent.rotation.y).toBeCloseTo(Math.PI/6);
+ element('reset').onclick!();flushFrames();expect(mesh.position.x).toBe(0);expect(parent.rotation.y).toBe(0);expect(parent.scale.x).toBe(3);
+ element('scene-choice').value='cube';await element('scene-choice').onchange!();flushFrames();expect(world.visible).toBe(false);expect(lab.parent.visible).toBe(true);expect(lab.gizmo.object).toBe(lab.cube);expect(element('object-name').textContent).toBe('Cube.001');
+});
