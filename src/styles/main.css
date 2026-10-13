@@ -21,3 +21,8 @@ header{position:absolute;top:max(22px,env(safe-area-inset-top));left:max(20px,en
 
 header .scene-picker{pointer-events:auto;display:flex;align-items:center;gap:8px;margin-top:10px;font-size:9px;color:var(--muted)}.scene-picker select{font-size:12px;max-width:180px;background:#11191ce8}#scene-message{display:block;font-size:11px;max-width:180px;margin-top:6px}.object-label>div{min-width:0;overflow-wrap:anywhere}.object-label select{flex-shrink:0}
 @media(max-width:600px){.scene-picker select{font-size:16px;max-width:190px}header .scene-picker{display:block;margin-top:6px}.scene-picker select{display:block}}
+.guide-target{outline:2px solid #f4c47e!important;outline-offset:4px;box-shadow:0 0 14px #f4c47e35}
+#learn-card{position:absolute;z-index:4;right:max(18px,env(safe-area-inset-right));bottom:100px;width:330px;max-height:45%;overflow:auto;padding:14px;background:#11191cf0;border:1px solid #b2e3d233;border-radius:16px}#learn-card p{line-height:1.5;margin:8px 0}#lesson-chooser button{display:block;width:100%;margin-top:6px;text-align:left}.learn-transport{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}.learn-transport button{padding:6px 9px;font-size:11px}#voice-status{display:block;color:var(--muted);font-size:10px}
+@media(max-width:600px) and (min-height:501px){#learn-card{left:12px;right:12px;width:auto;bottom:91px;max-height:260px}.inspector:has(.guide-target){bottom:362px;max-height:210px}#panel-dock button{width:48px}}
+@media(max-height:500px){#learn-card{width:300px;right:12px;bottom:12px;max-height:220px}}
+.origin-readout{font:11px/1.7 'IBM Plex Mono',monospace;color:#b2e3d2;padding:10px;margin-bottom:12px}

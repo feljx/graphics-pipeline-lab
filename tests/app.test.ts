@@ -186,3 +186,49 @@ it('integrates woodland selection, actual mesh transforms, preview, reset and re
  element('reset').onclick!();flushFrames();expect(mesh.position.x).toBe(0);expect(parent.rotation.y).toBe(0);expect(parent.scale.x).toBe(3);
  element('scene-choice').value='cube';await element('scene-choice').onchange!();flushFrames();expect(world.visible).toBe(false);expect(lab.parent.visible).toBe(true);expect(lab.gizmo.object).toBe(lab.cube);expect(element('object-name').textContent).toBe('Cube.001');
 });
+
+it('walkthrough commands use real controls, verify perspective/orthographic and restore',async()=>{
+ const initial=lab.cube.matrixWorld.clone(),camera=lab.camera.matrixWorld.clone();
+ element('lesson-perspective').onclick!();await Promise.resolve();await Promise.resolve();
+ element('learn-next').onclick!();await Promise.resolve();await Promise.resolve();
+ element('learn-next').onclick!();await Promise.resolve();await Promise.resolve();
+ expect(lab.cube.position.z).toBe(0);expect(lab.camera).toBeInstanceOf((await import('three')).OrthographicCamera);
+ element('learn-next').onclick!();await Promise.resolve();await Promise.resolve();
+ element('learn-next').onclick!();await Promise.resolve();await Promise.resolve();
+ expect(lab.cube.position.z).toBe(4);expect(Number(element('position-2').value)).toBe(4);
+ element('learn-exit').onclick!();await Promise.resolve();await Promise.resolve();flushFrames();
+ expect(lab.cube.matrixWorld.equals(initial)).toBe(true);expect(lab.camera.matrixWorld.equals(camera)).toBe(true);
+});
+it.each(['parent','clip'])('walkthrough %s completes its mathematical motion through application commands',async kind=>{
+ element(`lesson-${kind}`).onclick!();await Promise.resolve();await Promise.resolve();
+ element('learn-next').onclick!();await Promise.resolve();await Promise.resolve();
+ element('learn-next').onclick!();await Promise.resolve();await Promise.resolve();
+ if(kind==='parent'){expect(lab.cube.position.toArray()).toEqual([2,0,0]);expect(lab.cube.matrixWorld.elements[12]).toBeCloseTo(0);expect(lab.cube.matrixWorld.elements[14]).toBeCloseTo(-2);}else{expect(lab.camera.near).toBe(4.5);const {measure}=await import('../src/learning/lessons');expect(measure(lab).rejected).toBe(4);}
+ element('learn-exit').onclick!();await Promise.resolve();await Promise.resolve();flushFrames();
+});
+it('manual input cancels queued walkthrough motion, replay restores checkpoint, scene switch cancels',async()=>{
+ element('lesson-perspective').onclick!();await Promise.resolve();await Promise.resolve();element('learn-next').onclick!();await Promise.resolve();await Promise.resolve();
+ edit('position-2','1');flushFrames();expect(lab.cube.position.z).toBe(1);
+ element('learn-replay').onclick!();await Promise.resolve();await Promise.resolve();expect(lab.cube.position.z).toBe(0);
+ element('scene-choice').value='cube';await element('scene-choice').onchange!();flushFrames();expect(lab.cube.position.z).toBe(0);expect(element('learn-card').hidden).toBe(true);
+});
+
+it('measures perspective and orthographic animated results from actual matrices',async()=>{
+ const {measure}=await import('../src/learning/lessons');element('lesson-perspective').onclick!();await Promise.resolve();await Promise.resolve();const initial=measure(lab);
+ element('learn-next').onclick!();await Promise.resolve();await Promise.resolve();
+ for(const time of [0,900,1800,2700]){const queued=[...frames.values()];frames.clear();queued.forEach(fn=>fn(time));}await Promise.resolve();await Promise.resolve();
+ expect(measure(lab).span/initial.span).toBeCloseTo(2);expect(measure(lab).silhouette/initial.silhouette).toBeCloseTo(7/3);expect(element('learn-caption').textContent).toContain('2.000');
+ element('learn-next').onclick!();await Promise.resolve();await Promise.resolve();const ortho=measure(lab).span;element('learn-next').onclick!();await Promise.resolve();await Promise.resolve();
+ for(const time of [3000,3900,4800,5700]){const queued=[...frames.values()];frames.clear();queued.forEach(fn=>fn(time));}await Promise.resolve();await Promise.resolve();expect(measure(lab).span).toBeCloseTo(ortho);
+ element('learn-exit').onclick!();await Promise.resolve();await Promise.resolve();flushFrames();
+});
+it('restores Woodland selection, transforms, projection and open panel after an explicit cube lesson',async()=>{
+ const T=await import('three'),assets=await import('../src/scene/woodland-assets');const world=new T.Group(),mesh=new T.Mesh(new T.BoxGeometry(),new T.MeshStandardMaterial());mesh.name='Amber tent fixture';world.add(mesh);vi.spyOn(assets,'loadWoodland').mockResolvedValue({world,meshes:[mesh]});element('scene-choice').value='woodland';await element('scene-choice').onchange!();edit('position-0','1.7');element('math-tab').onclick!();const before=mesh.matrixWorld.clone();
+ element('lesson-parent').onclick!();await Promise.resolve();await Promise.resolve();await Promise.resolve();element('learn-exit').onclick!();for(let i=0;i<6;i++)await Promise.resolve();flushFrames();
+ expect(world.visible).toBe(true);expect(lab.gizmo.object).toBe(mesh);expect(mesh.matrixWorld.equals(before)).toBe(true);expect(element('math-tab').getAttribute('aria-expanded')).toBe('true');expect(lab.camera).toBeInstanceOf(T.OrthographicCamera);
+});
+it('restores parent selection, nonstandard order, selected vertex and inspection projection',async()=>{
+ change('hierarchy','parent');change('order','RTS');edit('position-0','2');edit('rotation-1','25');change('vertex','6');element('camera-tab').onclick!();const matrix=lab.parent.matrixWorld.clone(),far=lab.inspection.far,position=lab.inspection.position.clone();
+ element('lesson-clip').onclick!();await Promise.resolve();await Promise.resolve();element('learn-exit').onclick!();for(let i=0;i<4;i++)await Promise.resolve();flushFrames();
+ expect(lab.parent.matrixWorld.equals(matrix)).toBe(true);expect(lab.gizmo.object).toBe(lab.parent);expect(element('order').value).toBe('RTS');expect(lab.gizmo.enabled).toBe(false);expect(element('vertex').value).toBe('6');expect(lab.inspection.far).toBe(far);expect(lab.inspection.position.distanceTo(position)).toBeLessThan(1e-8);expect(element('camera-tab').getAttribute('aria-expanded')).toBe('true');
+});
